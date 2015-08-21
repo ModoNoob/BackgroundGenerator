@@ -3,16 +3,17 @@ package net.modonoob.backgroundgenerator.generator;
 import delaunay_triangulation.Delaunay_Triangulation;
 import delaunay_triangulation.Point_dt;
 import delaunay_triangulation.Triangle_dt;
+import java.awt.Color;
+import java.awt.Polygon;
 import java.util.Iterator;
 import java.util.Random;
 import net.modonoob.backgroundgenerator.triangle.Triangle;
-import org.newdawn.slick.Color;
-import org.newdawn.slick.geom.Line;
-import org.newdawn.slick.geom.Polygon;
 
 public class BackgroundGenerator {
     private final int nbOfPoints = 100;
     private final int proximityRange = 50;
+    private final Color[] globalColors;
+    private final Random R;
     
     private static int width;
     private static int height;
@@ -22,11 +23,7 @@ public class BackgroundGenerator {
     private Triangle_dt[] triangles;
     private Triangle[] renderedTriangles;
     
-    private Color[] globalColors;
-    
     private Delaunay_Triangulation triangulation;
-    
-    private Random R;
     
     public BackgroundGenerator(int w, int h) {
         width = w;
@@ -35,10 +32,6 @@ public class BackgroundGenerator {
         points = new Point_dt[nbOfPoints];
         globalColors = new Color[2];
         R = new Random();
-    }
-    
-    public void init() {
-        
     }
     
     public Triangle[] generate() {
@@ -78,7 +71,7 @@ public class BackgroundGenerator {
         
         renderedTriangles = new Triangle[triangles.length];
         for(int  j = 0; j < renderedTriangles.length; j++) {
-            int alpha = R.nextInt(125);
+            int alpha = R.nextInt(75);
             int colorIndex = R.nextInt(2);
             Triangle_dt t = triangles[j];
             float[] ps = new float[6];
@@ -86,49 +79,38 @@ public class BackgroundGenerator {
             ps[1] = (float)t.p1().y();
             ps[2] = (float)t.p2().x();
             ps[3] = (float)t.p2().y();
-            if(t.isHalfplane()) {
-                //System.out.println("I am a half plane: (" + ps[0] + ", " + ps[1] + "), (" + ps[2] + ", " + ps[3] + ")");
-                renderedTriangles[j] = new Triangle(new Line(ps[0], ps[1], ps[2], ps[3]), new Color(0, 0, 0, 0), alpha);
-            }
             if(!t.isHalfplane()) {
                 ps[4] = (float)t.p3().x();
                 ps[5] = (float)t.p3().y();
-                //System.out.println("I am NOT a half plane: (" + ps[0] + ", " + ps[1] + "), (" + ps[2] + ", " + ps[3] + "), (" + ps[4] + ", " + ps[5] + ")");
-                renderedTriangles[j] = new Triangle(new Polygon(ps), globalColors[colorIndex], alpha);
+                Polygon triangle = new Polygon();
+                triangle.addPoint((int)t.p1().x(), (int)t.p1().y());
+                triangle.addPoint((int)t.p2().x(), (int)t.p2().y());
+                triangle.addPoint((int)t.p3().x(), (int)t.p3().y());
+                renderedTriangles[j] = new Triangle(triangle, globalColors[colorIndex], alpha);
             }
         }
     }
     
     private void generateColors() {
-        float h = R.nextFloat();
-        float h2 = h - Math.min(R.nextFloat() + 0.25f, 0.75f);
-        //float h3 = h + 0.5f;
-        float s = 0.80f;
-        float l = 0.8f;
+        float h = R.nextFloat(); //Random hue (between 0 and 360 degrees)
+        float h2 = h + 0.5f; //Inverted color (+ 180 degrees)
+        float s = 0.75f;//R.nextFloat() * 0.15f + 0.6f; //Random saturation with a minimal value of 0.6f and a maximal value of 0.75f
+        float b = 0.75f;//R.nextFloat() * 0.25f + 0.75f; //random brightness with a minimal value of 0.75f
         
-        int color = java.awt.Color.HSBtoRGB(h, s, l);
-        java.awt.Color c = new java.awt.Color(color);
+        int hsbColor = Color.HSBtoRGB(h, s, b);
+        Color c = new Color(hsbColor);
+        globalColors[0] = c;
         
-        globalColors[0] = new Color(c.getRed(), c.getGreen(), c.getBlue());
-        
-        color = java.awt.Color.HSBtoRGB(h2, s, l);
-        c = new java.awt.Color(color);
-        
-        globalColors[1] = new Color(c.getRed(), c.getGreen(), c.getBlue());
-        
-        /*color = java.awt.Color.HSBtoRGB(h3, s, l);
-        c = new java.awt.Color(color);
-        
-        globalColors[2] = new Color(c.getRed(), c.getGreen(), c.getBlue());*/
+        hsbColor = Color.HSBtoRGB(h2, s, b);
+        c = new Color(hsbColor);
+        globalColors[1] = c;
     }
     
     private boolean isCloseToAPoint(double x, double y) {
-        for(Point_dt p : points) {
-            //System.out.println("X: " + p.getX() + ", x: " + x + "\nY: " + p.getY() + ", y: " + y);
+        for(Point_dt p : points)
             if(p != null)
                 if(Math.abs(x - p.x()) < proximityRange && Math.abs(y - p.y()) < proximityRange)
                     return true;
-        }
         return false;
     }
 }

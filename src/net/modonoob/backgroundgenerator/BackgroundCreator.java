@@ -1,59 +1,66 @@
 package net.modonoob.backgroundgenerator;
 
+import java.awt.BasicStroke;
+import java.awt.Graphics2D;
+import java.awt.RenderingHints;
+import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.IOException;
 import java.util.Date;
+import javax.imageio.ImageIO;
 import net.modonoob.backgroundgenerator.generator.BackgroundGenerator;
 import net.modonoob.backgroundgenerator.triangle.Triangle;
-import org.newdawn.slick.AppGameContainer;
-import org.newdawn.slick.BasicGame;
-import org.newdawn.slick.Color;
-import org.newdawn.slick.GameContainer;
-import org.newdawn.slick.Graphics;
-import org.newdawn.slick.Image;
-import org.newdawn.slick.SlickException;
-import org.newdawn.slick.imageout.ImageOut;
 
-public class BackgroundCreator extends BasicGame {
+public class BackgroundCreator {
     private static final String DIRECTORY = "Renders/";
     
-    private static int width, height;
+    private static int width, height, imageQty;
     private static BackgroundGenerator bg;
     private static Triangle[] triangles;
     
-    public static void main(String[] args) throws SlickException {
-        AppGameContainer app = new AppGameContainer(new BackgroundCreator("Background Generator"));
-        app.setDisplayMode(0, 0, false);
-        
-        app.start();
+    public static void main(String[] args) {
+        createRendersFolder();
+        init();
     }
     
     private static void createImage() {
-        Image image = null;
-        Graphics imageGraphics = null;
-        try {
-            image = new Image(width, height);
-            imageGraphics = image.getGraphics();
-        } catch(SlickException e) {
-            System.out.println("Oops, something went wrong while creating the image... Let's hope this dosen't happen again!");
-        }
-        imageGraphics.setBackground(Color.white);
+        BufferedImage image;
+        Graphics2D imageGraphics;
+       
+        image = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+        imageGraphics = image.createGraphics();
         
-        for(Triangle t : triangles) {
-            imageGraphics.setColor(t.color);
-            imageGraphics.fill(t.triangle);
+        imageGraphics.setStroke(new BasicStroke(5));
+        
+        for(Triangle t : triangles) { //First, you draw the lines of the polygons.
+            if(t != null) {
+                imageGraphics.setColor(t.color);
+                imageGraphics.drawPolygon(t.triangle);
+            }
         }
         
-        imageGraphics.flush();
+        imageGraphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        
+        for(Triangle t : triangles) { //Then, you draw the actual polygons over the lines so that the AWT antialiasing method knows what colors to use instead of going for white.
+            if(t != null) {
+                imageGraphics.setColor(t.color);
+                imageGraphics.fillPolygon(t.triangle);
+            }
+        }
         
         Date d = new Date();
         
+        File outputFile = null;
         try {
-            ImageOut.write(image, DIRECTORY + d.getTime() + ".png");
-        } catch(SlickException e) {
-            System.out.println("Could not write image file to disk " + DIRECTORY + d.getTime() + ".png");
+            outputFile = new File(DIRECTORY + d.getTime() + ".png");
+            ImageIO.write(image, "png", outputFile);
+            
+            System.out.println("\tWriting image file \"" + outputFile.getName() + "\" to disk...");
+        } catch(IOException e) {
+            System.out.println("\tCould not write image file to disk " + outputFile.getName());
         }
         
-        System.out.println("Created image " + DIRECTORY + d.getTime() + ".png");
+        System.out.println("\tCreated image " + DIRECTORY + d.getTime() + ".png");
     }
     
     private static void createRendersFolder() {
@@ -64,32 +71,17 @@ public class BackgroundCreator extends BasicGame {
         }
     }
 
-    public BackgroundCreator(String title) {
-        super(title);
-    }
-
-    @Override
-    public void init(GameContainer gc) throws SlickException {
+    public static void init() {
         System.out.println("Initializing BackgroundGenerator...");
         width = 1920 * 2;
         height = 1080;
+        imageQty = 5;
         bg = new BackgroundGenerator(width, height);
-        triangles = bg.generate();
-        System.out.println("Creating images...");
-        for(int i = 0; i < 1; i++) {
+        for(int i = 1; i <= imageQty; i++) {
+            System.out.println("Creating image " + i + " of " + imageQty + "...");
             triangles = bg.generate();
             createImage();
         }
         System.exit(0);
-    }
-
-    @Override
-    public void update(GameContainer gc, int i) throws SlickException {
-        
-    }
-
-    @Override
-    public void render(GameContainer gc, Graphics grphcs) throws SlickException {
-        
     }
 }
