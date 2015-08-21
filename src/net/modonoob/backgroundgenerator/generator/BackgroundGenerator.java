@@ -74,14 +74,7 @@ public class BackgroundGenerator {
             int alpha = R.nextInt(75);
             int colorIndex = R.nextInt(2);
             Triangle_dt t = triangles[j];
-            float[] ps = new float[6];
-            ps[0] = (float)t.p1().x();
-            ps[1] = (float)t.p1().y();
-            ps[2] = (float)t.p2().x();
-            ps[3] = (float)t.p2().y();
             if(!t.isHalfplane()) {
-                ps[4] = (float)t.p3().x();
-                ps[5] = (float)t.p3().y();
                 Polygon triangle = new Polygon();
                 triangle.addPoint((int)t.p1().x(), (int)t.p1().y());
                 triangle.addPoint((int)t.p2().x(), (int)t.p2().y());
